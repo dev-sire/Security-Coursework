@@ -1,0 +1,14 @@
+[
+    {
+        "sender": "wasay",
+        "recipient": "aman",
+        "amount": 500,
+        "timestamp": "2025-06-04T15:40:54.668338"
+    },
+    {
+        "sender": "aman",
+        "recipient": "devsire",
+        "amount": 1500,
+        "timestamp": "2025-06-04T15:44:09.431829"
+    }
+]

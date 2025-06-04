@@ -1,0 +1,14 @@
+{
+    "devsire": {
+        "password": "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5",
+        "role": "user"
+    },
+    "aman": {
+        "password": "1ea2f89d934cb4a2af0b486736609cf9cb4bdafdc6e946e79aecb02b9d9dceb4",
+        "role": "user"
+    },
+    "wasay": {
+        "password": "97a6d21df7c51e8289ac1a8c026aaac143e15aa1957f54f42e30d8f8a85c3a55",
+        "role": "user"
+    }
+}

@@ -102,6 +102,45 @@ class Handler(SimpleHTTPRequestHandler):
             key_set = key_set or bool(os.environ.get("GEMINI_API_KEY"))
             self._send_json({"gemini_key_configured": key_set})
             return
+        if self.path == "/api/live-log":
+            # Stream current telemetry + ransomware operation status for live UI
+            tel_path = os.path.join(BASE_DIR, "sandbox", "telemetry.log")
+            events = []
+            if os.path.exists(tel_path):
+                try:
+                    with open(tel_path) as f:
+                        for line in f:
+                            line = line.strip()
+                            if line:
+                                events.append(json.loads(line))
+                except Exception:
+                    pass
+            victim_dir = os.path.join(BASE_DIR, "sandbox", "victim_files")
+            locked = []
+            note_present = False
+            if os.path.isdir(victim_dir):
+                for name in sorted(os.listdir(victim_dir)):
+                    if name.endswith(".locked") or name.endswith(".locked_sim"):
+                        locked.append(name)
+                    if name.startswith("README_DECRYPT"):
+                        note_present = True
+            status_path = os.path.join(BASE_DIR, "sandbox", "ransomware_status.json")
+            status = {"state": "idle", "message": "No active operation"}
+            if os.path.exists(status_path):
+                try:
+                    with open(status_path) as f:
+                        status = json.load(f)
+                except Exception:
+                    pass
+            self._send_json({
+                "events": events[-80:],
+                "encrypted_files": locked,
+                "encrypted_count": len(locked),
+                "ransom_note_present": note_present,
+                "target_folder": victim_dir,
+                "status": status,
+            })
+            return
         super().do_GET()
 
     def do_POST(self):
@@ -198,6 +237,68 @@ class Handler(SimpleHTTPRequestHandler):
                 self._send_json({"saved": True})
             else:
                 self._send_json({"saved": False, "error": "empty key"}, status=400)
+            return
+
+        if self.path == "/api/ransomware/execute":
+            print("[server] Ransomware payload execution requested ...")
+            length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(length) if length else b"{}"
+            try:
+                params = json.loads(body.decode("utf-8")) if body else {}
+            except Exception:
+                params = {}
+            file_count = int(params.get("file_count", 60))
+            extension = params.get("extension") or ".locked"
+            status_path = os.path.join(BASE_DIR, "sandbox", "ransomware_status.json")
+            victim_dir = os.path.join(BASE_DIR, "sandbox", "victim_files")
+            from datetime import datetime, timezone
+            started = datetime.now(timezone.utc).isoformat()
+            with open(status_path, "w") as f:
+                json.dump({
+                    "state": "running",
+                    "message": f"Encrypting files in {victim_dir}",
+                    "started_at": started,
+                    "target_folder": victim_dir,
+                }, f)
+            env_overrides = {
+                "SIM_FILE_COUNT": str(file_count),
+                "SIM_EXTENSION": extension,
+            }
+            # Run full pipeline so detections also fire
+            code, out, err = run_pipeline_subprocess(env_overrides)
+            locked = []
+            if os.path.isdir(victim_dir):
+                locked = sorted([n for n in os.listdir(victim_dir) if n.endswith(extension) or n.endswith(".locked") or n.endswith(".locked_sim")])
+            note_present = any(n.startswith("README_DECRYPT") for n in os.listdir(victim_dir)) if os.path.isdir(victim_dir) else False
+            finished = datetime.now(timezone.utc).isoformat()
+            result_status = {
+                "state": "completed" if code == 0 else "failed",
+                "message": (
+                    f"Ransomware payload completed. {len(locked)} files encrypted in target folder. "
+                    f"Ransom note {'deployed' if note_present else 'not found'}. Shadow-copy wipe attempted."
+                ),
+                "started_at": started,
+                "finished_at": finished,
+                "target_folder": victim_dir,
+                "encrypted_count": len(locked),
+                "encrypted_files": locked[:40],
+                "ransom_note_present": note_present,
+                "extension": extension,
+            }
+            with open(status_path, "w") as f:
+                json.dump(result_status, f)
+            feed_path = os.path.join(DASHBOARD_DIR, "feed.json")
+            feed = None
+            if os.path.exists(feed_path):
+                with open(feed_path) as f:
+                    feed = json.load(f)
+            self._send_json({
+                "success": code == 0,
+                "returncode": code,
+                "status": result_status,
+                "stdout_tail": out[-3000:],
+                "feed": feed,
+            })
             return
 
         self._send_json({"error": "unknown endpoint"}, status=404)

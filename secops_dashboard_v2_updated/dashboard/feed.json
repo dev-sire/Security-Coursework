@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-11-18T23:08:26.685122+00:00",
+  "generated_at": "2026-11-18T22:54:21.176688+00:00",
   "sandbox": {
     "environment": "PROD-ENDPOINT-07",
     "status": "collection_complete",
     "telemetry_events": [
       {
-        "timestamp": "2026-11-18T23:08:24.515180+00:00",
+        "timestamp": "2026-11-18T22:53:40.593230+00:00",
         "host": "PROD-ENDPOINT-07",
         "environment": "production",
         "event_type": "process_start",
@@ -13,151 +13,151 @@
         "severity": "info"
       },
       {
-        "timestamp": "2026-11-18T23:08:24.535642+00:00",
+        "timestamp": "2026-11-18T22:53:54.620465+00:00",
         "host": "PROD-ENDPOINT-07",
         "environment": "production",
         "event_type": "file_creation_burst",
-        "detail": "Created 60 dummy target files in C:\\Users\\Xpertify Computers\\Desktop\\Python Projects\\Security-Coursework\\secops_dashboard_v2\\sandbox\\victim_files",
+        "detail": "Created 60 dummy target files in /home/workdir/artifacts/secops_dashboard/sandbox/victim_files",
         "severity": "info"
       },
       {
-        "timestamp": "2026-11-18T23:08:24.691112+00:00",
+        "timestamp": "2026-11-18T22:53:55.155915+00:00",
         "host": "PROD-ENDPOINT-07",
         "environment": "production",
         "event_type": "mass_file_rename",
-        "detail": "document_000_ygln.txt -> document_000_ygln.txt.locked",
+        "detail": "document_000_esjd.txt -> document_000_esjd.txt.locked",
         "severity": "high"
       },
       {
-        "timestamp": "2026-11-18T23:08:24.693116+00:00",
+        "timestamp": "2026-11-18T22:53:55.552057+00:00",
         "host": "PROD-ENDPOINT-07",
         "environment": "production",
         "event_type": "mass_file_rename",
-        "detail": "document_001_oopt.txt -> document_001_oopt.txt.locked",
+        "detail": "document_001_dzem.txt -> document_001_dzem.txt.locked",
         "severity": "high"
       },
       {
-        "timestamp": "2026-11-18T23:08:24.693116+00:00",
+        "timestamp": "2026-11-18T22:53:55.924073+00:00",
         "host": "PROD-ENDPOINT-07",
         "environment": "production",
         "event_type": "mass_file_rename",
-        "detail": "document_002_dlox.txt -> document_002_dlox.txt.locked",
+        "detail": "document_002_pbli.txt -> document_002_pbli.txt.locked",
         "severity": "high"
       },
       {
-        "timestamp": "2026-11-18T23:08:24.693116+00:00",
+        "timestamp": "2026-11-18T22:53:56.265252+00:00",
         "host": "PROD-ENDPOINT-07",
         "environment": "production",
         "event_type": "mass_file_rename",
-        "detail": "document_003_beuo.txt -> document_003_beuo.txt.locked",
+        "detail": "document_003_behl.txt -> document_003_behl.txt.locked",
         "severity": "high"
       },
       {
-        "timestamp": "2026-11-18T23:08:24.695221+00:00",
+        "timestamp": "2026-11-18T22:53:56.669692+00:00",
         "host": "PROD-ENDPOINT-07",
         "environment": "production",
         "event_type": "mass_file_rename",
-        "detail": "document_004_esuv.txt -> document_004_esuv.txt.locked",
+        "detail": "document_004_wwki.txt -> document_004_wwki.txt.locked",
         "severity": "high"
       },
       {
-        "timestamp": "2026-11-18T23:08:24.695221+00:00",
+        "timestamp": "2026-11-18T22:53:57.065200+00:00",
         "host": "PROD-ENDPOINT-07",
         "environment": "production",
         "event_type": "mass_file_rename",
-        "detail": "document_005_drct.txt -> document_005_drct.txt.locked",
+        "detail": "document_005_rhik.txt -> document_005_rhik.txt.locked",
         "severity": "high"
       },
       {
-        "timestamp": "2026-11-18T23:08:24.695221+00:00",
+        "timestamp": "2026-11-18T22:53:57.456225+00:00",
         "host": "PROD-ENDPOINT-07",
         "environment": "production",
         "event_type": "mass_file_rename",
-        "detail": "document_006_yeco.txt -> document_006_yeco.txt.locked",
+        "detail": "document_006_otxy.txt -> document_006_otxy.txt.locked",
         "severity": "high"
       },
       {
-        "timestamp": "2026-11-18T23:08:24.695221+00:00",
+        "timestamp": "2026-11-18T22:53:57.824783+00:00",
         "host": "PROD-ENDPOINT-07",
         "environment": "production",
         "event_type": "mass_file_rename",
-        "detail": "document_007_sitz.txt -> document_007_sitz.txt.locked",
+        "detail": "document_007_egzf.txt -> document_007_egzf.txt.locked",
         "severity": "high"
       },
       {
-        "timestamp": "2026-11-18T23:08:24.695221+00:00",
+        "timestamp": "2026-11-18T22:53:58.190000+00:00",
         "host": "PROD-ENDPOINT-07",
         "environment": "production",
         "event_type": "mass_file_rename",
-        "detail": "document_008_xqpw.txt -> document_008_xqpw.txt.locked",
+        "detail": "document_008_wose.txt -> document_008_wose.txt.locked",
         "severity": "high"
       },
       {
-        "timestamp": "2026-11-18T23:08:24.695221+00:00",
+        "timestamp": "2026-11-18T22:53:58.546106+00:00",
         "host": "PROD-ENDPOINT-07",
         "environment": "production",
         "event_type": "mass_file_rename",
-        "detail": "document_009_npjq.txt -> document_009_npjq.txt.locked",
+        "detail": "document_009_ighc.txt -> document_009_ighc.txt.locked",
         "severity": "high"
       },
       {
-        "timestamp": "2026-11-18T23:08:24.695221+00:00",
+        "timestamp": "2026-11-18T22:53:58.914859+00:00",
         "host": "PROD-ENDPOINT-07",
         "environment": "production",
         "event_type": "mass_file_rename",
-        "detail": "document_010_grdd.txt -> document_010_grdd.txt.locked",
+        "detail": "document_010_qhcc.txt -> document_010_qhcc.txt.locked",
         "severity": "high"
       },
       {
-        "timestamp": "2026-11-18T23:08:24.695221+00:00",
+        "timestamp": "2026-11-18T22:53:59.287239+00:00",
         "host": "PROD-ENDPOINT-07",
         "environment": "production",
         "event_type": "mass_file_rename",
-        "detail": "document_011_kjzr.txt -> document_011_kjzr.txt.locked",
+        "detail": "document_011_zzkq.txt -> document_011_zzkq.txt.locked",
         "severity": "high"
       },
       {
-        "timestamp": "2026-11-18T23:08:24.695221+00:00",
+        "timestamp": "2026-11-18T22:53:59.683863+00:00",
         "host": "PROD-ENDPOINT-07",
         "environment": "production",
         "event_type": "mass_file_rename",
-        "detail": "document_012_bcez.txt -> document_012_bcez.txt.locked",
+        "detail": "document_012_uopi.txt -> document_012_uopi.txt.locked",
         "severity": "high"
       },
       {
-        "timestamp": "2026-11-18T23:08:24.695221+00:00",
+        "timestamp": "2026-11-18T22:54:00.087269+00:00",
         "host": "PROD-ENDPOINT-07",
         "environment": "production",
         "event_type": "mass_file_rename",
-        "detail": "document_013_bnza.txt -> document_013_bnza.txt.locked",
+        "detail": "document_013_ezeu.txt -> document_013_ezeu.txt.locked",
         "severity": "high"
       },
       {
-        "timestamp": "2026-11-18T23:08:24.695221+00:00",
+        "timestamp": "2026-11-18T22:54:00.457826+00:00",
         "host": "PROD-ENDPOINT-07",
         "environment": "production",
         "event_type": "mass_file_rename",
-        "detail": "document_014_amjv.txt -> document_014_amjv.txt.locked",
+        "detail": "document_014_obta.txt -> document_014_obta.txt.locked",
         "severity": "high"
       },
       {
-        "timestamp": "2026-11-18T23:08:24.727864+00:00",
+        "timestamp": "2026-11-18T22:54:17.654709+00:00",
         "host": "PROD-ENDPOINT-07",
         "environment": "production",
         "event_type": "rename_burst_summary",
-        "detail": "60 files renamed with extension '.locked' in 0.037s (rate=1632.6 files/sec)",
+        "detail": "60 files renamed with extension '.locked' in 22.884s (rate=2.6 files/sec)",
         "severity": "critical"
       },
       {
-        "timestamp": "2026-11-18T23:08:24.727864+00:00",
+        "timestamp": "2026-11-18T22:54:17.873719+00:00",
         "host": "PROD-ENDPOINT-07",
         "environment": "production",
         "event_type": "ransom_note_dropped",
-        "detail": "File created: C:\\Users\\Xpertify Computers\\Desktop\\Python Projects\\Security-Coursework\\secops_dashboard_v2\\sandbox\\victim_files\\README_DECRYPT.txt",
+        "detail": "File created: /home/workdir/artifacts/secops_dashboard/sandbox/victim_files/README_DECRYPT.txt",
         "severity": "critical"
       },
       {
-        "timestamp": "2026-11-18T23:08:24.727864+00:00",
+        "timestamp": "2026-11-18T22:54:17.873832+00:00",
         "host": "PROD-ENDPOINT-07",
         "environment": "production",
         "event_type": "shadow_copy_deletion_attempt",
@@ -165,7 +165,7 @@
         "severity": "critical"
       },
       {
-        "timestamp": "2026-11-18T23:08:24.727864+00:00",
+        "timestamp": "2026-11-18T22:54:17.873839+00:00",
         "host": "PROD-ENDPOINT-07",
         "environment": "production",
         "event_type": "network_connection",
@@ -173,7 +173,7 @@
         "severity": "high"
       },
       {
-        "timestamp": "2026-11-18T23:08:24.727864+00:00",
+        "timestamp": "2026-11-18T22:54:17.873842+00:00",
         "host": "PROD-ENDPOINT-07",
         "environment": "production",
         "event_type": "registry_modification",
@@ -181,7 +181,7 @@
         "severity": "medium"
       },
       {
-        "timestamp": "2026-11-18T23:08:24.727864+00:00",
+        "timestamp": "2026-11-18T22:54:17.873845+00:00",
         "host": "PROD-ENDPOINT-07",
         "environment": "production",
         "event_type": "process_injection",
@@ -189,7 +189,7 @@
         "severity": "high"
       },
       {
-        "timestamp": "2026-11-18T23:08:24.727864+00:00",
+        "timestamp": "2026-11-18T22:54:17.873847+00:00",
         "host": "PROD-ENDPOINT-07",
         "environment": "production",
         "event_type": "analysis_complete",
@@ -478,7 +478,7 @@
     "training_metrics": {
       "status": "TRAINED",
       "note": "Logistic regression trained with gradient descent. Metrics computed on held-out test set.",
-      "training_time_seconds": 0.761,
+      "training_time_seconds": 0.721,
       "train_size": 6375,
       "test_size": 2125,
       "final_train_accuracy": 0.6878,

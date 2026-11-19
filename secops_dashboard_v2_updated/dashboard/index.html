@@ -76,6 +76,7 @@
 
   .badge { font-size: 9.5px; padding: 3px 9px; border-radius: 20px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
   .badge.live { background: rgba(61,220,132,0.12); color: var(--ok); border: 1px solid rgba(61,220,132,0.4); }
+  #live-badge { animation: pulse 1.6s infinite; }
   .badge.synth { background: rgba(199,125,255,0.12); color: var(--synth); border: 1px solid rgba(199,125,255,0.4); }
   .badge.real-train { background: rgba(79,195,255,0.12); color: var(--accent); border: 1px solid rgba(79,195,255,0.4); }
 
@@ -143,12 +144,14 @@
   </div>
   <div class="hero-actions">
     <button id="run-btn" onclick="runLive()"><span class="status-dot" id="run-dot"></span>Run Live Detection</button>
+    <button class="danger-ok" id="rw-btn" onclick="executeRansomware()">☠ Deploy Ransomware</button>
     <button class="secondary" onclick="togglePanel('custom-sim-panel')">🧪 Scenario Builder</button>
     <button class="secondary" onclick="togglePanel('config-panel')">⚙ AI API Settings</button>
   </div>
 </div>
 
 <div class="small-note" id="run-feedback" style="margin-bottom: 14px;"></div>
+<div id="rw-status-bar" style="display:none; margin-bottom:14px; padding:12px 16px; border-radius:10px; border:1px solid rgba(255,84,100,0.45); background:rgba(255,84,100,0.08); font-size:13px;"></div>
 
 <div id="custom-sim-panel">
   <div style="font-size:13px; font-weight:700; margin-bottom:10px;">Configure detection scenario parameters</div>
@@ -187,13 +190,15 @@
 <div class="tab-panel active" id="tab-overview">
   <div class="grid">
     <div class="panel">
-      <h2><span><span class="ico">🖥</span>Endpoint Telemetry</span><span class="badge live">Live Collection</span></h2>
+      <h2><span><span class="ico">🖥</span>Endpoint Telemetry</span><span class="badge live" id="live-badge">● LIVE</span></h2>
       <div class="stat-row">
         <div class="stat"><div class="num" id="sb-host">—</div><div class="lbl">Host</div></div>
         <div class="stat"><div class="num" id="sb-events">0</div><div class="lbl">Events Logged</div></div>
         <div class="stat"><div class="num" id="sb-status">—</div><div class="lbl">Status</div></div>
+        <div class="stat"><div class="num" id="rw-enc-count">0</div><div class="lbl">Files Encrypted</div></div>
       </div>
-      <div id="telemetry"></div>
+      <div id="rw-target" class="small-note" style="margin-bottom:8px;"></div>
+      <div id="telemetry" style="max-height:320px; overflow-y:auto; font-family:Consolas,monospace; font-size:11.5px; line-height:1.55;"></div>
     </div>
 
     <div class="panel">
@@ -641,6 +646,136 @@ function wlTable(){
 }
 function wlAuto(){clearInterval(wlTimer); if(document.getElementById('wl-auto').checked) wlTimer=setInterval(runWinLive,Math.max(10,+document.getElementById('wl-int').value)*1000);}
 function wlExport(){ if(!WL)return; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(WL,null,2)],{type:'application/json'})); a.download='vip_live_telemetry.json'; a.click(); }
+
+// --- Live activity stream (auto-refresh) ---
+let liveLogTimer = null;
+let lastEventCount = 0;
+
+function severityColor(sev) {
+  if (sev === 'critical') return 'var(--crit)';
+  if (sev === 'high') return 'var(--high)';
+  if (sev === 'medium') return 'var(--med)';
+  return 'var(--muted)';
+}
+
+async function pollLiveLog() {
+  try {
+    const res = await fetch('/api/live-log');
+    if (!res.ok) return;
+    const data = await res.json();
+    const events = data.events || [];
+    const hostEl = document.getElementById('sb-host');
+    const eventsEl = document.getElementById('sb-events');
+    const statusEl = document.getElementById('sb-status');
+    const encEl = document.getElementById('rw-enc-count');
+    const targetEl = document.getElementById('rw-target');
+    const telEl = document.getElementById('telemetry');
+    if (!telEl) return;
+
+    if (events.length) {
+      const last = events[events.length - 1];
+      if (hostEl) hostEl.textContent = last.host || 'PROD-ENDPOINT-07';
+    }
+    if (eventsEl) eventsEl.textContent = events.length;
+    if (statusEl) {
+      const st = (data.status && data.status.state) || 'idle';
+      statusEl.textContent = st.replace(/_/g, ' ');
+    }
+    if (encEl) encEl.textContent = data.encrypted_count || 0;
+    if (targetEl) {
+      targetEl.innerHTML = data.encrypted_count
+        ? `<span style="color:var(--crit);">Target:</span> <code>${esc(data.target_folder || '')}</code> — <b>${data.encrypted_count}</b> files encrypted` +
+          (data.ransom_note_present ? ' · ransom note present' : '')
+        : `Target folder: <code>${esc(data.target_folder || 'sandbox/victim_files')}</code>`;
+    }
+
+    // Render newest-first live log
+    const html = events.slice().reverse().map(e => {
+      const ts = (e.timestamp || '').replace('T', ' ').replace(/\+.*/, '');
+      const col = severityColor(e.severity);
+      return `<div style="border-left:3px solid ${col}; padding:4px 8px; margin-bottom:4px; background:rgba(0,0,0,0.2); border-radius:4px;">
+        <span style="color:var(--dim);">${esc(ts)}</span>
+        <span style="color:${col}; font-weight:700; margin:0 6px;">${esc((e.severity || 'info').toUpperCase())}</span>
+        <span style="color:var(--accent);">${esc(e.event_type || '')}</span>
+        <div style="color:var(--muted); margin-top:2px;">${esc(e.detail || '')}</div>
+      </div>`;
+    }).join('');
+    telEl.innerHTML = html || '<div class="small-note">Waiting for telemetry…</div>';
+
+    // Auto-scroll only when new events arrive
+    if (events.length > lastEventCount) {
+      telEl.scrollTop = 0;
+      lastEventCount = events.length;
+    }
+
+    // Update ransomware status bar if operation active/completed
+    const bar = document.getElementById('rw-status-bar');
+    if (bar && data.status && data.status.state && data.status.state !== 'idle') {
+      bar.style.display = 'block';
+      const s = data.status;
+      if (s.state === 'running') {
+        bar.style.borderColor = 'rgba(255,154,61,0.5)';
+        bar.style.background = 'rgba(255,154,61,0.1)';
+        bar.innerHTML = `<b style="color:var(--high);">● ENCRYPTION IN PROGRESS</b> — ${esc(s.message || '')}`;
+      } else if (s.state === 'completed') {
+        bar.style.borderColor = 'rgba(255,84,100,0.5)';
+        bar.style.background = 'rgba(255,84,100,0.1)';
+        bar.innerHTML = `<b style="color:var(--crit);">☠ RANSOMWARE COMPLETE</b> — ${esc(s.message || '')}` +
+          (s.encrypted_files && s.encrypted_files.length
+            ? `<div style="margin-top:6px; font-size:11px; color:var(--muted);">Sample: ${s.encrypted_files.slice(0,8).map(esc).join(', ')}${s.encrypted_files.length > 8 ? '…' : ''}</div>`
+            : '');
+      } else {
+        bar.style.display = 'block';
+        bar.textContent = s.message || s.state;
+      }
+    }
+  } catch (e) { /* silent — server may be restarting */ }
+}
+
+function startLiveLog() {
+  pollLiveLog();
+  if (liveLogTimer) clearInterval(liveLogTimer);
+  liveLogTimer = setInterval(pollLiveLog, 2500);
+}
+
+// --- Ransomware payload execution ---
+async function executeRansomware() {
+  const btn = document.getElementById('rw-btn');
+  const feedback = document.getElementById('run-feedback');
+  const bar = document.getElementById('rw-status-bar');
+  btn.disabled = true;
+  feedback.textContent = 'Deploying ransomware payload against target folder…';
+  if (bar) {
+    bar.style.display = 'block';
+    bar.style.borderColor = 'rgba(255,154,61,0.5)';
+    bar.style.background = 'rgba(255,154,61,0.1)';
+    bar.innerHTML = '<b style="color:var(--high);">● ENCRYPTION IN PROGRESS</b> — Writing encrypted files and deploying ransom note…';
+  }
+  try {
+    const fileCount = parseInt(document.getElementById('sim-count')?.value) || 60;
+    const extension = document.getElementById('sim-ext')?.value || '.locked';
+    const res = await fetch('/api/ransomware/execute', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ file_count: fileCount, extension: extension })
+    });
+    const result = await res.json();
+    if (result.success) {
+      const s = result.status || {};
+      feedback.textContent = `✓ Ransomware finished — ${s.encrypted_count || 0} files encrypted. Detection pipeline updated.`;
+      if (result.feed) renderFeed(result.feed);
+      await pollLiveLog();
+    } else {
+      feedback.textContent = '✗ Payload execution failed — check server console.';
+    }
+  } catch (err) {
+    feedback.textContent = '✗ Could not reach /api/ransomware/execute — start server.py first.';
+  }
+  btn.disabled = false;
+}
+
+// Boot live stream
+startLiveLog();
 </script>
 </body>
 </html>

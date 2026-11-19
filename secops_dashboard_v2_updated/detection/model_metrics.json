@@ -1,7 +1,7 @@
 {
   "status": "TRAINED",
   "note": "Logistic regression trained with gradient descent. Metrics computed on held-out test set.",
-  "training_time_seconds": 0.761,
+  "training_time_seconds": 0.721,
   "train_size": 6375,
   "test_size": 2125,
   "final_train_accuracy": 0.6878,

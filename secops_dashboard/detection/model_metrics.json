@@ -1,0 +1,139 @@
+{
+  "status": "TRAINED",
+  "note": "Logistic regression trained with gradient descent. Metrics computed on held-out test set.",
+  "training_time_seconds": 0.721,
+  "train_size": 6375,
+  "test_size": 2125,
+  "final_train_accuracy": 0.6878,
+  "final_loss": 0.5575,
+  "history": [
+    {
+      "epoch": 1,
+      "loss": 0.6931,
+      "train_accuracy": 0.6328
+    },
+    {
+      "epoch": 4,
+      "loss": 0.6523,
+      "train_accuracy": 0.6328
+    },
+    {
+      "epoch": 8,
+      "loss": 0.6294,
+      "train_accuracy": 0.6328
+    },
+    {
+      "epoch": 12,
+      "loss": 0.6184,
+      "train_accuracy": 0.6328
+    },
+    {
+      "epoch": 16,
+      "loss": 0.6113,
+      "train_accuracy": 0.6328
+    },
+    {
+      "epoch": 20,
+      "loss": 0.6055,
+      "train_accuracy": 0.6328
+    },
+    {
+      "epoch": 24,
+      "loss": 0.6005,
+      "train_accuracy": 0.6328
+    },
+    {
+      "epoch": 28,
+      "loss": 0.5959,
+      "train_accuracy": 0.6328
+    },
+    {
+      "epoch": 32,
+      "loss": 0.5917,
+      "train_accuracy": 0.6328
+    },
+    {
+      "epoch": 36,
+      "loss": 0.5878,
+      "train_accuracy": 0.6328
+    },
+    {
+      "epoch": 40,
+      "loss": 0.5841,
+      "train_accuracy": 0.6328
+    },
+    {
+      "epoch": 44,
+      "loss": 0.5807,
+      "train_accuracy": 0.6329
+    },
+    {
+      "epoch": 48,
+      "loss": 0.5774,
+      "train_accuracy": 0.6337
+    },
+    {
+      "epoch": 52,
+      "loss": 0.5744,
+      "train_accuracy": 0.6359
+    },
+    {
+      "epoch": 56,
+      "loss": 0.5716,
+      "train_accuracy": 0.6391
+    },
+    {
+      "epoch": 60,
+      "loss": 0.5689,
+      "train_accuracy": 0.6458
+    },
+    {
+      "epoch": 64,
+      "loss": 0.5664,
+      "train_accuracy": 0.6536
+    },
+    {
+      "epoch": 68,
+      "loss": 0.564,
+      "train_accuracy": 0.6605
+    },
+    {
+      "epoch": 72,
+      "loss": 0.5617,
+      "train_accuracy": 0.6714
+    },
+    {
+      "epoch": 76,
+      "loss": 0.5596,
+      "train_accuracy": 0.6789
+    },
+    {
+      "epoch": 80,
+      "loss": 0.5575,
+      "train_accuracy": 0.6878
+    }
+  ],
+  "model_type": "Logistic Regression (gradient descent)",
+  "learned_weights": {
+    "rename_rate": 0.6064,
+    "note_present": 1.001,
+    "shadow_copy_attempt": 0.7161,
+    "process_entropy": 0.1736,
+    "file_write_burst": 0.2496
+  },
+  "learned_bias": -0.3012,
+  "evaluation": {
+    "confusion_matrix": {
+      "true_positive": 1312,
+      "false_positive": 634,
+      "false_negative": 30,
+      "true_negative": 149
+    },
+    "precision": 0.6742,
+    "recall": 0.9776,
+    "f1_score": 0.7981,
+    "accuracy": 0.6875,
+    "specificity": 0.1903,
+    "test_set_size": 2125
+  }
+}

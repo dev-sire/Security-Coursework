@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VIP Security Monitoring — Windows Security Operations Dashboard</title>
+<style>
+  :root {
+    --bg: #0a0d12; --bg2: #0e1319; --panel: #131922; --panel2: #1a222d; --panel3: #202b38;
+    --border: #253341; --border-light: #324457;
+    --text: #eef2f6; --muted: #8fa0b3; --dim: #5d6c7d;
+    --accent: #4fc3ff; --accent2: #7b61ff;
+    --crit: #ff5464; --high: #ff9a3d; --med: #ffd43d; --ok: #3ddc84; --synth: #c77dff;
+    --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { background: radial-gradient(ellipse at top, #0e141c 0%, #080a0e 100%); color: var(--text); font-family: var(--font); margin: 0; min-height: 100vh; }
+  .wrap { max-width: 1440px; margin: 0 auto; padding: 24px 28px 60px; }
+
+  .hero { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px; margin-bottom: 22px; padding-bottom: 18px; border-bottom: 1px solid var(--border); }
+  .hero h1 { font-size: 21px; margin: 0 0 4px; font-weight: 700; letter-spacing: -0.3px; }
+  .hero h1 span.accent { background: linear-gradient(90deg, var(--accent), var(--accent2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hero .subtitle { color: var(--muted); font-size: 12.5px; }
+  .hero-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+  button {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    background: linear-gradient(135deg, #3db4f0 0%, #2d9fe0 50%, #1f8fd0 100%);
+    color: #04121c; border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 9px; padding: 10px 18px; font-weight: 700; font-size: 13px;
+    cursor: pointer; transition: transform .12s, box-shadow .15s, filter .12s;
+    box-shadow: 0 2px 10px rgba(45,159,224,0.28), inset 0 1px 0 rgba(255,255,255,0.18);
+    letter-spacing: 0.2px;
+  }
+  button:hover { transform: translateY(-1px); filter: brightness(1.06); box-shadow: 0 5px 18px rgba(45,159,224,0.38), inset 0 1px 0 rgba(255,255,255,0.22); }
+  button:active { transform: translateY(0); filter: brightness(0.97); }
+  button:disabled { opacity: 0.45; cursor: wait; transform: none; filter: none; }
+  button.secondary {
+    background: linear-gradient(180deg, #2a3545 0%, #1e2836 100%);
+    color: var(--text); border: 1px solid #3a4a5c;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+  button.secondary:hover { border-color: var(--accent); background: linear-gradient(180deg, #324054 0%, #243142 100%); filter: none; box-shadow: 0 3px 12px rgba(0,0,0,0.3), 0 0 0 1px rgba(79,195,255,0.15); }
+  button.ghost {
+    background: transparent; color: var(--muted); border: 1px dashed var(--border-light);
+    box-shadow: none; padding: 8px 14px; font-size: 12px;
+  }
+  button.ghost:hover { color: var(--text); border-color: var(--accent); background: rgba(79,195,255,0.06); filter: none; }
+  button.danger-ok { background: linear-gradient(135deg, var(--crit), #c73a4a); color: white; border-color: rgba(255,255,255,0.1); }
+
+  input[type=password], input[type=text], input[type=number], textarea, select {
+    background: var(--panel2); border: 1px solid var(--border); color: var(--text);
+    padding: 9px 11px; border-radius: 7px; font-size: 12.5px; font-family: var(--font);
+  }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+  label.field { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--muted); }
+
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; background: var(--dim); }
+  .status-dot.ok { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+  .status-dot.busy { background: var(--med); animation: pulse 0.9s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.25;} }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid var(--border); overflow-x: auto; }
+  .tab-btn { background: none; border: none; box-shadow: none; color: var(--muted); padding: 11px 16px; font-size: 13px; font-weight: 600; border-radius: 0; border-bottom: 2px solid transparent; white-space: nowrap; }
+  .tab-btn:hover { color: var(--text); transform: none; }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-panel { display: none; animation: fadein .25s ease; }
+  .tab-panel.active { display: block; }
+  @keyframes fadein { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 16px; }
+  .panel { background: linear-gradient(180deg, var(--panel), var(--bg2)); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+  .panel h2 { font-size: 13.5px; margin: 0 0 14px; display: flex; align-items: center; justify-content: space-between; color: var(--text); gap: 8px; flex-wrap: wrap; font-weight: 700; }
+  .panel h2 .ico { margin-right: 8px; }
+
+  .badge { font-size: 9.5px; padding: 3px 9px; border-radius: 20px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+  .badge.live { background: rgba(61,220,132,0.12); color: var(--ok); border: 1px solid rgba(61,220,132,0.4); }
+  #live-badge { animation: pulse 1.6s infinite; }
+  .badge.synth { background: rgba(199,125,255,0.12); color: var(--synth); border: 1px solid rgba(199,125,255,0.4); }
+  .badge.real-train { background: rgba(79,195,255,0.12); color: var(--accent); border: 1px solid rgba(79,195,255,0.4); }
+
+  .stat-row { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+  .stat { flex: 1; min-width: 85px; background: var(--panel2); border: 1px solid var(--border); border-radius: 9px; padding: 12px 10px; text-align: center; }
+  .stat .num { font-size: 21px; font-weight: 800; background: linear-gradient(135deg, var(--text), var(--muted)); -webkit-background-clip: text; background-clip: text; }
+  .stat .lbl { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; margin-top: 2px; }
+
+  .alert { background: var(--panel2); border-left: 3px solid var(--crit); border-radius: 8px; padding: 11px 13px; margin-bottom: 8px; font-size: 12.5px; }
+  .alert.medium { border-left-color: var(--med); }
+  .alert .title { font-weight: 700; font-size: 13px; }
+  .alert .meta { color: var(--muted); margin-top: 4px; line-height: 1.5; }
+  .pill { display: inline-block; background: #0d1620; border: 1px solid var(--border); border-radius: 5px; padding: 2px 7px; font-size: 10px; margin-right: 4px; color: var(--accent); font-weight: 600; }
+
+  .log-line { font-family: 'Consolas', monospace; font-size: 11px; color: var(--muted); padding: 3px 0; border-bottom: 1px dashed #1b2530; }
+  .log-line.crit { color: var(--crit); }
+  .log-line.high { color: var(--high); }
+  #telemetry { max-height: 260px; overflow-y: auto; }
+
+  .llm-box { background: var(--panel2); border-radius: 10px; padding: 14px; font-size: 13px; line-height: 1.6; border: 1px solid var(--border); }
+  .llm-meta { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  .tag { font-size: 10px; padding: 4px 9px; border-radius: 20px; background: #0d1620; border: 1px solid var(--border); font-weight: 600; }
+  .tag.warn { color: var(--crit); border-color: var(--crit); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+  th, td { padding: 7px 8px; text-align: left; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 600; text-transform: uppercase; font-size: 10px; letter-spacing: 0.3px; }
+  .block-tag { color: var(--crit); font-weight: 700; }
+
+  .cm-table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: center; margin-top: 10px; }
+  .cm-table td, .cm-table th { border: 1px solid var(--border); padding: 12px 8px; }
+  .cm-table .tp { background: rgba(61,220,132,0.18); font-weight: 700; }
+  .cm-table .tn { background: rgba(61,220,132,0.08); font-weight: 700; }
+  .cm-table .fp, .cm-table .fn { background: rgba(255,84,100,0.14); font-weight: 700; }
+
+  #config-panel, #custom-sim-panel, #fw-upload-panel { display: none; margin-top: 12px; background: var(--panel2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  #config-panel.open, #custom-sim-panel.open, #fw-upload-panel.open { display: block; }
+  .field-row { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 10px; }
+  .small-note { font-size: 11px; color: var(--dim); margin-top: 8px; line-height: 1.5; }
+  .checkbox-row { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+
+  canvas { width: 100%; display: block; }
+  .chart-wrap { background: var(--panel2); border-radius: 10px; padding: 12px; border: 1px solid var(--border); }
+
+  .footer-note { margin-top: 28px; font-size: 11.5px; color: var(--dim); border-top: 1px solid var(--border); padding-top: 14px; line-height: 1.6; }
+  code { background: #0d1620; padding: 1px 5px; border-radius: 4px; font-size: 11px; color: var(--accent); }
+
+  .chip{cursor:pointer;user-select:none;font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border-light);color:var(--muted);background:var(--panel2);margin-right:6px}
+  .chip.on{color:var(--text);border-color:var(--accent)}
+  .finding{background:var(--panel2);border-left:3px solid var(--crit);border-radius:8px;padding:10px 13px;margin-bottom:8px;font-size:12.5px;cursor:pointer}
+  .finding.high{border-left-color:var(--high)}.finding.medium{border-left-color:var(--med)}.finding.low{border-left-color:var(--ok)}
+  .finding pre{display:none;margin:8px 0 0;white-space:pre-wrap;word-break:break-all;font:11px Consolas,monospace;color:var(--muted);background:#0a1018;padding:8px;border-radius:6px}
+  .finding.open pre{display:block}
+  .mod-ok{color:var(--ok)}.mod-err{color:var(--crit)}
+  #live-table-wrap{max-height:340px;overflow:auto}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="hero">
+  <div>
+    <h1>🛡 <span class="accent">VIP Security Monitoring</span></h1>
+    <div class="subtitle" id="generated-at">Loading feed...</div>
+  </div>
+  <div class="hero-actions">
+    <button id="run-btn" onclick="runLive()"><span class="status-dot" id="run-dot"></span>Run Live Detection</button>
+    <button class="danger-ok" id="rw-btn" onclick="executeRansomware()">☠ Deploy Ransomware</button>
+    <button class="secondary" onclick="togglePanel('custom-sim-panel')">🧪 Scenario Builder</button>
+    <button class="secondary" onclick="togglePanel('config-panel')">⚙ AI API Settings</button>
+  </div>
+</div>
+
+<div class="small-note" id="run-feedback" style="margin-bottom: 14px;"></div>
+<div id="rw-status-bar" style="display:none; margin-bottom:14px; padding:12px 16px; border-radius:10px; border:1px solid rgba(255,84,100,0.45); background:rgba(255,84,100,0.08); font-size:13px;"></div>
+
+<div id="custom-sim-panel">
+  <div style="font-size:13px; font-weight:700; margin-bottom:10px;">Configure detection scenario parameters</div>
+  <div class="small-note" style="margin-top:-4px; margin-bottom:12px;">Adjust file volume, extension pattern, and optional stages. Detection rules, ML scoring, and analyst summary will update based on the resulting telemetry.</div>
+  <div class="field-row">
+    <label class="field">File count<input type="number" id="sim-count" value="85" min="1" max="500"></label>
+    <label class="field">Extension pattern<input type="text" id="sim-ext" value=".locked"></label>
+    <label class="checkbox-row"><input type="checkbox" id="sim-skip-note"> Skip ransom note</label>
+    <label class="checkbox-row"><input type="checkbox" id="sim-skip-shadow"> Skip shadow-copy attempt</label>
+    <button onclick="runCustomSimulation()">Run Scenario</button>
+  </div>
+  <div class="small-note">Tip: Lower the file count and disable stages to observe how confidence and severity drop when fewer indicators are present.</div>
+</div>
+
+<div id="config-panel">
+  <div style="font-size:13px; font-weight:700; margin-bottom:10px;">Gemini API Key</div>
+  <div class="small-note" style="margin-top:-4px; margin-bottom:10px;">Optional — routes the analyst opinion through Gemini. When unset, the local analyst model is used.</div>
+  <div class="field-row">
+    <input type="password" id="api-key-input" placeholder="Paste Gemini API key" style="width:260px;">
+    <button onclick="saveKey()">Save Key</button>
+  </div>
+  <span class="small-note" id="key-status"></span>
+  <div class="small-note">Key is stored in <code>config.json</code> on the server — never sent elsewhere or displayed back once saved.</div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="overview" onclick="showTab('overview')">📊 Overview</button>
+  <button class="tab-btn" data-tab="ml" onclick="showTab('ml')">🧠 ML Classifier</button>
+  <button class="tab-btn" data-tab="llm" onclick="showTab('llm')">💬 LLM Opinion</button>
+  <button class="tab-btn" data-tab="firewall" onclick="showTab('firewall')">🔥 Firewall</button>
+  <button class="tab-btn" data-tab="winlive" onclick="showTab('winlive')">🖥 Live Windows</button>
+  <button class="tab-btn" data-tab="vuln" onclick="showTab('vuln')">🔓 Vuln Scanner</button>
+  <button class="tab-btn" data-tab="compliance" onclick="showTab('compliance')">📋 Compliance</button>
+</div>
+
+<!-- OVERVIEW TAB -->
+<div class="tab-panel active" id="tab-overview">
+  <div class="grid">
+    <div class="panel">
+      <h2><span><span class="ico">🖥</span>Endpoint Telemetry</span><span class="badge live" id="live-badge">● LIVE</span></h2>
+      <div class="stat-row">
+        <div class="stat"><div class="num" id="sb-host">—</div><div class="lbl">Host</div></div>
+        <div class="stat"><div class="num" id="sb-events">0</div><div class="lbl">Events Logged</div></div>
+        <div class="stat"><div class="num" id="sb-status">—</div><div class="lbl">Status</div></div>
+        <div class="stat"><div class="num" id="rw-enc-count">0</div><div class="lbl">Files Encrypted</div></div>
+      </div>
+      <div id="rw-target" class="small-note" style="margin-bottom:8px;"></div>
+      <div id="telemetry" style="max-height:320px; overflow-y:auto; font-family:Consolas,monospace; font-size:11.5px; line-height:1.55;"></div>
+    </div>
+
+    <div class="panel">
+      <h2><span><span class="ico">📏</span>Local Detection Rules</span><span class="badge live">Rule Engine</span></h2>
+      <div id="rule-alerts"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ML TAB -->
+<div class="tab-panel" id="tab-ml">
+  <div class="panel" style="margin-bottom:16px;">
+    <h2><span><span class="ico">🧠</span>Behavioral Classifier — Logistic Regression</span><span class="badge real-train">Trained Model</span></h2>
+    <div class="stat-row">
+      <div class="stat"><div class="num" id="ml-acc">—</div><div class="lbl">Held-out Accuracy</div></div>
+      <div class="stat"><div class="num" id="ml-f1">—</div><div class="lbl">F1 Score</div></div>
+      <div class="stat"><div class="num" id="ml-prec">—</div><div class="lbl">Precision</div></div>
+      <div class="stat"><div class="num" id="ml-rec">—</div><div class="lbl">Recall</div></div>
+      <div class="stat"><div class="num" id="ml-prob">—</div><div class="lbl">Live Verdict Prob.</div></div>
+    </div>
+    <table class="cm-table">
+      <thead><tr><th></th><th>Predicted: Ransomware</th><th>Predicted: Benign</th></tr></thead>
+      <tbody>
+        <tr><th>Actual: Ransomware</th><td class="tp" id="cm-tp">—</td><td class="fn" id="cm-fn">—</td></tr>
+        <tr><th>Actual: Benign</th><td class="fp" id="cm-fp">—</td><td class="tn" id="cm-tn">—</td></tr>
+      </tbody>
+    </table>
+    <div class="small-note" id="ml-note" style="margin-top:12px;"></div>
+  </div>
+  <div class="grid">
+    <div class="panel">
+      <h2>Training Loss / Accuracy Curve</h2>
+      <div class="chart-wrap"><canvas id="chart-training" height="220"></canvas></div>
+    </div>
+    <div class="panel">
+      <h2>Precision / Recall / F1 (held-out test set)</h2>
+      <div class="chart-wrap"><canvas id="chart-metrics" height="220"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- LLM TAB -->
+<div class="tab-panel" id="tab-llm">
+  <div class="panel">
+    <h2><span><span class="ico">💬</span>Analyst Opinion</span><span class="badge" id="llm-badge">—</span></h2>
+    <div class="llm-meta">
+      <span class="tag" id="llm-model">model: —</span>
+      <span class="tag" id="llm-conf">confidence: —</span>
+      <span class="tag warn" id="llm-review" style="display:none;">⚠ human review required</span>
+    </div>
+    <div class="llm-box" id="llm-text">—</div>
+  </div>
+</div>
+
+<!-- FIREWALL TAB -->
+<div class="tab-panel" id="tab-firewall">
+  <div class="panel" style="margin-bottom:16px;">
+    <h2><span><span class="ico">🔥</span>Network Firewall</span><span class="badge live" id="fw-mode-badge">Flow Telemetry Active</span>
+      <button class="ghost" onclick="togglePanel('fw-upload-panel')">⬆ Upload Flow Data</button>
+    </h2>
+    <div class="stat-row">
+      <div class="stat"><div class="num" id="fw-total">0</div><div class="lbl">Flows Evaluated</div></div>
+      <div class="stat"><div class="num" id="fw-blocked">0</div><div class="lbl">Blocked</div></div>
+      <div class="stat"><div class="num" id="fw-allowed">0</div><div class="lbl">Allowed</div></div>
+    </div>
+    <table>
+      <thead><tr><th>Action</th><th>Rule</th><th>Technique</th><th>Src IP</th><th>Dst IP</th><th>Dst Port</th></tr></thead>
+      <tbody id="fw-table"></tbody>
+    </table>
+  </div>
+
+  <div id="fw-upload-panel">
+    <div style="font-size:13px; font-weight:700; margin-bottom:8px;">Evaluate your own flow data — real rule engine, your real CSV</div>
+    <div class="small-note" style="margin-top:-2px; margin-bottom:10px;">
+      Columns required: <code>src_ip,dst_ip,src_port,dst_port,protocol,flow_duration_ms,packets_per_sec,bytes_per_sec</code> (label column optional/ignored).
+      Paste CSV text below, or drag a .csv file onto the box.
+    </div>
+    <div id="drop-zone" style="border: 2px dashed var(--border-light); border-radius: 10px; padding: 14px; text-align:center; color: var(--muted); font-size:12px; margin-bottom:10px; cursor:pointer;">
+      Drop a .csv file here, or click to browse
+      <input type="file" id="fw-file-input" accept=".csv" style="display:none;">
+    </div>
+    <textarea id="fw-csv-text" rows="6" style="width:100%;" placeholder="src_ip,dst_ip,src_port,dst_port,protocol,flow_duration_ms,packets_per_sec,bytes_per_sec,label&#10;192.168.1.10,45.142.212.61,51213,443,TCP,30000,0.8,900,"></textarea>
+    <div style="margin-top:10px;"><button onclick="uploadFirewallCsv()">Evaluate This Data</button></div>
+    <div class="small-note" id="fw-upload-status"></div>
+  </div>
+</div>
+
+<!-- LIVE WINDOWS TAB -->
+<div class="tab-panel" id="tab-winlive">
+  <div class="panel" style="margin-bottom:16px;">
+    <h2><span><span class="ico">🖥</span>Live Windows Telemetry <span class="small-note" id="wl-caps"></span></span><span class="badge live" id="wl-badge">Real host data · read-only</span></h2>
+    <div class="small-note" style="margin-top:-6px;margin-bottom:12px;">Reads the machine running <code>server.py</code> (processes, tasks, TCP connections, shadow copies, Run keys, Defender, ransomware-style filenames). Nothing is modified or executed; file contents are never read. Elevated shell gives fuller results.</div>
+    <div class="field-row" id="wl-mods"></div>
+    <div class="field-row">
+      <label class="field">Folders to scan for ransomware extensions (one per line; blank = Documents/Desktop/Downloads)<textarea id="wl-paths" rows="2" style="width:360px"></textarea></label>
+      <label class="field">Max depth<input type="number" id="wl-depth" value="4" min="1" max="10" style="width:80px"></label>
+      <label class="field">Max files<input type="number" id="wl-maxfiles" value="20000" min="100" max="200000" style="width:100px"></label>
+      <button id="wl-run" onclick="runWinLive()">▶ Collect Now</button>
+      <label class="checkbox-row"><input type="checkbox" id="wl-auto" onchange="wlAuto()"> Auto-refresh every <input type="number" id="wl-int" value="30" min="10" style="width:60px"> s</label>
+      <button class="secondary" onclick="document.getElementById('wl-file').click()">⬆ Analyze snapshot JSON</button>
+      <button class="secondary" onclick="wlExport()">⬇ Export result</button>
+      <input type="file" id="wl-file" accept=".json" style="display:none" onchange="wlUpload(this.files[0])">
+    </div>
+    <div class="small-note" id="wl-status">Not collected yet. On a non-Windows server, run <code>telemetry/windows_collector.py</code> on a Windows host and upload its snapshot.</div>
+  </div>
+  <div class="grid">
+    <div class="panel">
+      <h2>Findings <span id="wl-risk" class="tag">risk —</span></h2>
+      <div class="stat-row" id="wl-sev"></div>
+      <div id="wl-chips" style="margin-bottom:10px"></div>
+      <div id="wl-findings"><div class="small-note">Run a collection to see findings. Click a finding to expand its evidence.</div></div>
+    </div>
+    <div class="panel">
+      <h2>Raw telemetry <select id="wl-view" onchange="wlTable()"></select></h2>
+      <input type="text" id="wl-search" placeholder="Filter rows (e.g. powershell, 4444, \\Temp\\)" oninput="wlTable()" style="width:100%;margin-bottom:8px">
+      <div id="live-table-wrap"><table><thead id="wl-thead"></thead><tbody id="wl-tbody"></tbody></table></div>
+      <div class="small-note" id="wl-mods-status" style="margin-top:10px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- VULN SCANNER TAB -->
+<div class="tab-panel" id="tab-vuln">
+  <div class="panel" style="margin-bottom:16px;">
+    <h2>
+      <span><span class="ico">🔓</span>Windows Vulnerability Assessment</span>
+      <span class="badge live" id="vuln-scan-badge">Idle</span>
+    </h2>
+    <div class="stat-row">
+      <div class="stat"><div class="num" id="vuln-host">PROD-ENDPOINT-07</div><div class="lbl">Target Host</div></div>
+      <div class="stat"><div class="num" id="vuln-os">Windows 11 23H2</div><div class="lbl">OS Build</div></div>
+      <div class="stat"><div class="num" id="vuln-checked">0</div><div class="lbl">Checks Run</div></div>
+      <div class="stat"><div class="num" id="vuln-open" style="color:var(--crit)">0</div><div class="lbl">Open Findings</div></div>
+      <div class="stat"><div class="num" id="vuln-score">—</div><div class="lbl">Risk Score</div></div>
+    </div>
+    <div class="field-row" style="margin-top:8px; align-items:center;">
+      <button id="vuln-scan-btn" onclick="startVulnScan()">▶ Start Authenticated Scan</button>
+      <button class="secondary" onclick="resetVulnScan()">Reset</button>
+      <span class="small-note" id="vuln-scan-status">Ready — will probe local configuration, services, and patch level.</span>
+    </div>
+    <div id="vuln-progress-wrap" style="display:none; margin-top:14px;">
+      <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--muted); margin-bottom:6px;">
+        <span id="vuln-progress-label">Initializing scanner…</span>
+        <span id="vuln-progress-pct">0%</span>
+      </div>
+      <div style="height:8px; background:var(--panel2); border-radius:6px; overflow:hidden; border:1px solid var(--border);">
+        <div id="vuln-progress-bar" style="height:100%; width:0%; background:linear-gradient(90deg,var(--accent),var(--accent2)); transition:width .35s ease;"></div>
+      </div>
+      <div id="vuln-scan-log" style="margin-top:10px; max-height:140px; overflow-y:auto; font:11.5px Consolas,monospace; color:var(--muted); line-height:1.5;"></div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <h2>Findings <span class="badge" id="vuln-findings-badge" style="background:rgba(255,84,100,0.12);color:var(--crit);border:1px solid rgba(255,84,100,0.4);">—</span></h2>
+      <div id="vuln-findings-list"><div class="small-note">Run a scan to populate findings.</div></div>
+    </div>
+    <div class="panel">
+      <h2>Exploitation Detail <span class="badge" style="background:rgba(255,84,100,0.12);color:var(--crit);border:1px solid rgba(255,84,100,0.4);">OPEN</span></h2>
+      <div id="vuln-exploit-detail"><div class="small-note">Select an open finding or complete a scan to view exploitation path.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- COMPLIANCE TAB -->
+<div class="tab-panel" id="tab-compliance">
+  <div class="panel">
+    <h2><span><span class="ico">📋</span>Trustworthy AI & Compliance Mapping</span><span class="badge live">CWE · CVE · NIST · PCI · PECA</span></h2>
+    <div id="trust-controls" style="margin-bottom: 14px;"></div>
+    <div id="compliance-list"></div>
+  </div>
+</div>
+
+<div class="footer-note">
+  VIP Security Monitoring · Behavioral rules · ML classifier · Analyst model · Network flow analysis
+  <br>Last feed update: <span id="gen-time-footer">—</span>
+</div>
+
+</div>
+
+<script>
+let lastFeed = null;
+
+function showTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
+}
+function togglePanel(id) { document.getElementById(id).classList.toggle('open'); }
+
+async function loadFeed() {
+  const res = await fetch('feed.json?_=' + Date.now());
+  const data = await res.json();
+  renderFeed(data);
+}
+
+function renderFeed(data) {
+  lastFeed = data;
+  document.getElementById('generated-at').textContent = 'Pipeline feed generated: ' + data.generated_at;
+  document.getElementById('gen-time-footer').textContent = data.generated_at;
+
+  const events = data.sandbox.telemetry_events || [];
+  document.getElementById('sb-host').textContent = data.sandbox.environment;
+  document.getElementById('sb-events').textContent = events.length;
+  document.getElementById('sb-status').textContent = data.sandbox.status.replace(/_/g, ' ');
+  document.getElementById('telemetry').innerHTML = events.map(e => {
+    const cls = e.severity === 'critical' ? 'crit' : (e.severity === 'high' ? 'high' : '');
+    return `<div class="log-line ${cls}">[${e.timestamp}] ${e.event_type}: ${e.detail}</div>`;
+  }).join('');
+
+  const alerts = data.local_rules.alerts || [];
+  document.getElementById('rule-alerts').innerHTML = alerts.map(a => `
+    <div class="alert ${a.severity === 'medium' ? 'medium' : ''}">
+      <div class="title">${a.rule_id} — ${a.rule_name}</div>
+      <div class="meta"><span class="pill">${a.technique}</span><span class="pill">${a.occurrences}x</span><span class="pill">${a.severity}</span></div>
+      <div class="meta">${a.description}</div>
+    </div>`).join('') || '<div class="meta">No rules triggered.</div>';
+
+  const ml = data.ml.inference_result;
+  const metrics = data.ml.training_metrics;
+  const ev = metrics.evaluation || {};
+  document.getElementById('ml-acc').textContent = (ev.accuracy * 100).toFixed(1) + '%';
+  document.getElementById('ml-f1').textContent = (ev.f1_score * 100).toFixed(1) + '%';
+  document.getElementById('ml-prec').textContent = (ev.precision * 100).toFixed(1) + '%';
+  document.getElementById('ml-rec').textContent = (ev.recall * 100).toFixed(1) + '%';
+  document.getElementById('ml-prob').textContent = (ml.ransomware_probability * 100).toFixed(1) + '%';
+  document.getElementById('ml-note').textContent = metrics.note;
+  if (ev.confusion_matrix) {
+    const cm = ev.confusion_matrix;
+    document.getElementById('cm-tp').textContent = cm.true_positive;
+    document.getElementById('cm-fn').textContent = cm.false_negative;
+    document.getElementById('cm-fp').textContent = cm.false_positive;
+    document.getElementById('cm-tn').textContent = cm.true_negative;
+  }
+  drawTrainingChart(metrics.history || []);
+  drawMetricsBarChart(ev);
+
+  const llm = data.llm;
+  const isLive = llm.source === 'gemini_api';
+  document.getElementById('llm-badge').textContent = isLive ? 'Gemini' : 'Local Analyst Model';
+  document.getElementById('llm-badge').className = 'badge live';
+  document.getElementById('llm-model').textContent = 'model: ' + llm.model;
+  document.getElementById('llm-conf').textContent = 'confidence: ' + llm.confidence_qualifier;
+  document.getElementById('llm-review').style.display = llm.human_review_required ? 'inline-block' : 'none';
+  document.getElementById('llm-text').textContent = llm.opinion;
+
+  renderFirewall(data.firewall);
+
+  const trust = data.trustworthy_ai_controls;
+  document.getElementById('trust-controls').innerHTML = `
+    <span class="tag ${trust.human_review_required ? 'warn' : ''}">human_review_required: ${trust.human_review_required}</span>
+    <span class="tag">confidence: ${trust.confidence_qualifier}</span>
+    <span class="tag">evidence_logged: ${trust.evidence_logged}</span>
+    <div class="small-note" style="margin-top:10px;">${trust.notes}</div>`;
+
+  const compDiv = document.getElementById('compliance-list');
+  let compHtml = '';
+  alerts.forEach(a => {
+    const c = a.compliance || {};
+    compHtml += `<div class="alert" style="border-left-color: var(--accent);">
+      <div class="title">${a.technique} — ${a.rule_name}</div>
+      <div class="meta">CWE: ${(c.cwe||[]).join('; ') || '—'}</div>
+      <div class="meta">Example CVEs: ${(c.example_cves||[]).join('; ') || '—'}</div>
+      <div class="meta">NIST 800-53: ${(c.nist_800_53||[]).join('; ') || '—'}</div>
+      <div class="meta">NIST 800-61: ${(c.nist_800_61||[]).join('; ') || '—'}</div>
+      <div class="meta">PCI DSS v4: ${(c.pci_dss_v4||[]).join('; ') || '—'}</div>
+      <div class="meta">PECA 2016: ${(c.peca_2016||[]).join('; ') || '—'}</div>
+    </div>`;
+  });
+  document.getElementById('compliance-list').innerHTML = compHtml || '<div class="meta">No compliance mappings triggered.</div>';
+}
+
+function renderFirewall(fw) {
+  document.getElementById('fw-total').textContent = fw.total_flows_evaluated;
+  document.getElementById('fw-blocked').textContent = fw.blocked_count;
+  document.getElementById('fw-allowed').textContent = fw.allowed_count;
+  document.getElementById('fw-table').innerHTML = fw.blocked_flows.map(b => `
+    <tr><td class="block-tag">${b.action.toUpperCase()}</td><td>${b.rule}</td><td>${b.technique}</td>
+    <td>${b.flow.src_ip}</td><td>${b.flow.dst_ip}</td><td>${b.flow.dst_port}</td></tr>`).join('');
+}
+
+// --- Canvas charts (no external deps) ---
+function drawTrainingChart(history) {
+  const canvas = document.getElementById('chart-training');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth; const h = canvas.height = 220;
+  ctx.clearRect(0, 0, w, h);
+  if (!history.length) return;
+  const pad = 32;
+  const losses = history.map(p => p.loss);
+  const accs = history.map(p => p.train_accuracy);
+  const maxLoss = Math.max(...losses, 0.01);
+  const drawLine = (series, color, maxVal) => {
+    ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 2;
+    series.forEach((v, i) => {
+      const x = pad + (i / (series.length - 1 || 1)) * (w - pad * 2);
+      const y = h - pad - (v / maxVal) * (h - pad * 2);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  };
+  ctx.strokeStyle = '#253341'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad + i * (h - pad * 2) / 4;
+    ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(w - pad, y); ctx.stroke();
+  }
+  drawLine(losses, '#ff5464', maxLoss);
+  drawLine(accs, '#3ddc84', 1.0);
+  ctx.font = '11px sans-serif';
+  ctx.fillStyle = '#ff5464'; ctx.fillText('● Loss', pad, 16);
+  ctx.fillStyle = '#3ddc84'; ctx.fillText('● Train Accuracy', pad + 60, 16);
+  ctx.fillStyle = '#8fa0b3'; ctx.fillText('Epoch 1', pad, h - 8);
+  ctx.fillText('Epoch ' + history[history.length - 1].epoch, w - pad - 60, h - 8);
+}
+
+function drawMetricsBarChart(ev) {
+  const canvas = document.getElementById('chart-metrics');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth; const h = canvas.height = 220;
+  ctx.clearRect(0, 0, w, h);
+  const metrics = [
+    { label: 'Precision', val: ev.precision || 0, color: '#4fc3ff' },
+    { label: 'Recall', val: ev.recall || 0, color: '#7b61ff' },
+    { label: 'F1 Score', val: ev.f1_score || 0, color: '#3ddc84' },
+    { label: 'Accuracy', val: ev.accuracy || 0, color: '#ffd43d' },
+  ];
+  const pad = 36; const barW = (w - pad * 2) / metrics.length * 0.55;
+  const gap = (w - pad * 2) / metrics.length;
+  metrics.forEach((m, i) => {
+    const x = pad + i * gap + (gap - barW) / 2;
+    const barH = m.val * (h - pad * 2);
+    const y = h - pad - barH;
+    ctx.fillStyle = m.color; ctx.fillRect(x, y, barW, barH);
+    ctx.fillStyle = '#eef2f6'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText((m.val * 100).toFixed(1) + '%', x + barW / 2, y - 6);
+    ctx.fillStyle = '#8fa0b3'; ctx.font = '11px sans-serif';
+    ctx.fillText(m.label, x + barW / 2, h - pad + 16);
+  });
+  ctx.textAlign = 'left';
+}
+
+// --- Live run ---
+async function runLive(extraParams) {
+  const btn = document.getElementById('run-btn');
+  const dot = document.getElementById('run-dot');
+  const feedback = document.getElementById('run-feedback');
+  btn.disabled = true;
+  dot.className = 'status-dot busy';
+  feedback.textContent = 'Running detection pipeline: telemetry collection → rules → ML classifier → analyst model → firewall...';
+  try {
+    const res = await fetch('/api/run', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(extraParams || {})
+    });
+    const result = await res.json();
+    if (result.success && result.feed) {
+      renderFeed(result.feed);
+      feedback.textContent = '✓ Live run complete — results above are fresh, generated just now.';
+      dot.className = 'status-dot ok';
+    } else {
+      feedback.textContent = '✗ Run failed: ' + (result.stderr_tail || 'see server console');
+      dot.className = 'status-dot';
+    }
+  } catch (err) {
+    feedback.textContent = '✗ Could not reach /api/run — make sure you started server.py, not http.server.';
+    dot.className = 'status-dot';
+  }
+  btn.disabled = false;
+}
+
+function runCustomSimulation() {
+  const params = {
+    file_count: parseInt(document.getElementById('sim-count').value) || 12,
+    extension: document.getElementById('sim-ext').value || '.locked_sim',
+    skip_note: document.getElementById('sim-skip-note').checked,
+    skip_shadow: document.getElementById('sim-skip-shadow').checked,
+  };
+  runLive(params);
+}
+
+async function saveKey() {
+  const key = document.getElementById('api-key-input').value.trim();
+  const status = document.getElementById('key-status');
+  if (!key) { status.textContent = 'Enter a key first.'; return; }
+  try {
+    const res = await fetch('/api/config', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ gemini_api_key: key })
+    });
+    const result = await res.json();
+    status.textContent = result.saved ? '✓ Saved. Next live run will use Gemini.' : '✗ Failed to save.';
+    document.getElementById('api-key-input').value = '';
+  } catch (err) {
+    status.textContent = '✗ Could not reach /api/config — make sure server.py is running.';
+  }
+}
+
+async function uploadFirewallCsv() {
+  const status = document.getElementById('fw-upload-status');
+  const text = document.getElementById('fw-csv-text').value.trim();
+  if (!text) { status.textContent = 'Paste or drop a CSV first.'; return; }
+  status.textContent = 'Evaluating...';
+  try {
+    const res = await fetch('/api/firewall-upload', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ csv_text: text })
+    });
+    const result = await res.json();
+    if (result.success) {
+      document.getElementById('fw-mode-badge').textContent = 'Data Mode: Your Uploaded CSV';
+      document.getElementById('fw-mode-badge').className = 'badge live';
+      renderFirewall(result.firewall_result);
+      status.textContent = `✓ Evaluated ${result.firewall_result.total_flows_evaluated} real rows from your file.`;
+    } else {
+      status.textContent = '✗ ' + (result.error || 'evaluation failed');
+    }
+  } catch (err) {
+    status.textContent = '✗ Could not reach /api/firewall-upload — make sure server.py is running.';
+  }
+}
+
+// Drag/drop + click-to-browse for CSV
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('fw-file-input');
+dropZone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', e => readCsvFile(e.target.files[0]));
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor = 'var(--accent)'; });
+dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = 'var(--border-light)'; });
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.style.borderColor = 'var(--border-light)';
+  if (e.dataTransfer.files.length) readCsvFile(e.dataTransfer.files[0]);
+});
+function readCsvFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => { document.getElementById('fw-csv-text').value = reader.result; };
+  reader.readAsText(file);
+}
+
+loadFeed().catch(err => {
+  document.getElementById('generated-at').textContent = 'Could not load feed.json — click "Run Live Detection" above, or run run_pipeline.py first.';
+  console.error(err);
+});
+
+// ---- Live Windows telemetry ----
+let WL=null, wlSev=new Set(['critical','high','medium','low']), wlTimer=null;
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+fetch('/api/telemetry/capabilities').then(r=>r.json()).then(c=>{
+  document.getElementById('wl-caps').textContent=(c.windows?'· Windows host':'· non-Windows server (upload mode)')+(c.windows?(c.is_admin?' · elevated':' · NOT elevated'):'');
+  document.getElementById('wl-mods').innerHTML=c.modules.map(m=>`<label class="checkbox-row"><input type="checkbox" class="wl-mod" value="${m}" checked> ${m}</label>`).join('');
+}).catch(()=>{});
+async function runWinLive(){
+  const b=document.getElementById('wl-run'),st=document.getElementById('wl-status'); b.disabled=true; st.textContent='Collecting from this host...';
+  const body={modules:[...document.querySelectorAll('.wl-mod:checked')].map(x=>x.value),scan_paths:document.getElementById('wl-paths').value,
+    max_depth:+document.getElementById('wl-depth').value,max_files:+document.getElementById('wl-maxfiles').value};
+  try{const r=await (await fetch('/api/telemetry/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();wlHandle(r);}
+  catch(e){st.textContent='✗ Could not reach server.py';}
+  b.disabled=false;
+}
+async function wlUpload(f){ if(!f)return; const t=await f.text(); const st=document.getElementById('wl-status'); st.textContent='Analyzing uploaded snapshot...';
+  try{const r=await (await fetch('/api/telemetry/upload',{method:'POST',headers:{'Content-Type':'application/json'},body:t})).json();wlHandle(r);}catch(e){st.textContent='✗ Upload failed';} }
+function wlHandle(r){
+  const st=document.getElementById('wl-status');
+  if(!r.success){st.textContent='✗ '+(r.error||'failed');return;}
+  WL=r; const m=r.snapshot_meta;
+  st.textContent=`✓ ${m.source==='uploaded_snapshot'?'Uploaded snapshot':'Live collection'} · host ${m.host} · ${m.os} · ${m.is_admin?'elevated':'not elevated'} · ${m.collected_at}`;
+  const a=r.analysis; document.getElementById('wl-risk').textContent='risk '+a.risk_score+'/100';
+  document.getElementById('wl-sev').innerHTML=['critical','high','medium','low'].map(s=>`<div class="stat"><div class="num">${a.severity_counts[s]}</div><div class="lbl">${s}</div></div>`).join('');
+  document.getElementById('wl-chips').innerHTML=['critical','high','medium','low'].map(s=>`<span class="chip ${wlSev.has(s)?'on':''}" onclick="wlToggle('${s}')">${s}</span>`).join('');
+  document.getElementById('wl-mods-status').innerHTML=Object.entries(a.module_status).map(([k,v])=>`<span class="${v.status==='ok'?'mod-ok':'mod-err'}">${k}: ${v.status==='ok'?v.count+' rows · '+v.seconds+'s':esc(v.error)}</span>`).join('<br>');
+  const sel=document.getElementById('wl-view'); const keys=Object.keys(r.raw).filter(k=>r.raw[k].status==='ok'); const cur=sel.value;
+  sel.innerHTML=keys.map(k=>`<option>${k}</option>`).join(''); if(keys.includes(cur))sel.value=cur;
+  wlFindings(); wlTable();
+}
+function wlToggle(s){wlSev.has(s)?wlSev.delete(s):wlSev.add(s); wlHandle(WL);}
+function wlFindings(){
+  const F=WL.analysis.findings.filter(f=>wlSev.has(f.severity));
+  document.getElementById('wl-findings').innerHTML=F.map(f=>`<div class="finding ${f.severity}" onclick="this.classList.toggle('open')">
+    <div class="title">${f.rule_id} — ${esc(f.rule_name)}</div><div class="meta"><span class="pill">${f.technique}</span><span class="pill">${f.severity}</span><span class="pill">${f.module}</span></div>
+    <div class="meta">${esc(f.description)}</div><pre>${esc(JSON.stringify(f.evidence,null,2))}\n\nNIST 800-53: ${esc((f.compliance.nist_800_53||[]).join('; '))}\nPCI DSS v4: ${esc((f.compliance.pci_dss_v4||[]).join('; '))}</pre></div>`).join('')
+    || '<div class="small-note">No findings at the selected severities.</div>';
+}
+function wlTable(){
+  if(!WL)return; const k=document.getElementById('wl-view').value; let d=WL.raw[k]&&WL.raw[k].data; if(!d)return;
+  if(!Array.isArray(d)) d=d.hits||[]; const q=document.getElementById('wl-search').value.toLowerCase();
+  const cols=d.length?Object.keys(d[0]):[]; const rows=d.filter(r=>!q||JSON.stringify(r).toLowerCase().includes(q)).slice(0,500);
+  document.getElementById('wl-thead').innerHTML='<tr>'+cols.map(c=>`<th>${esc(c)}</th>`).join('')+'</tr>';
+  document.getElementById('wl-tbody').innerHTML=rows.map(r=>'<tr>'+cols.map(c=>`<td>${esc(String(r[c]==null?'':r[c]).slice(0,140))}</td>`).join('')+'</tr>').join('')||'<tr><td>No rows</td></tr>';
+}
+function wlAuto(){clearInterval(wlTimer); if(document.getElementById('wl-auto').checked) wlTimer=setInterval(runWinLive,Math.max(10,+document.getElementById('wl-int').value)*1000);}
+function wlExport(){ if(!WL)return; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(WL,null,2)],{type:'application/json'})); a.download='vip_live_telemetry.json'; a.click(); }
+
+// --- Live activity stream (auto-refresh) ---
+let liveLogTimer = null;
+let lastEventCount = 0;
+
+function severityColor(sev) {
+  if (sev === 'critical') return 'var(--crit)';
+  if (sev === 'high') return 'var(--high)';
+  if (sev === 'medium') return 'var(--med)';
+  return 'var(--muted)';
+}
+
+async function pollLiveLog() {
+  try {
+    const res = await fetch('/api/live-log');
+    if (!res.ok) return;
+    const data = await res.json();
+    const events = data.events || [];
+    const hostEl = document.getElementById('sb-host');
+    const eventsEl = document.getElementById('sb-events');
+    const statusEl = document.getElementById('sb-status');
+    const encEl = document.getElementById('rw-enc-count');
+    const targetEl = document.getElementById('rw-target');
+    const telEl = document.getElementById('telemetry');
+    if (!telEl) return;
+
+    if (events.length) {
+      const last = events[events.length - 1];
+      if (hostEl) hostEl.textContent = last.host || 'PROD-ENDPOINT-07';
+    }
+    if (eventsEl) eventsEl.textContent = events.length;
+    if (statusEl) {
+      const st = (data.status && data.status.state) || 'idle';
+      statusEl.textContent = st.replace(/_/g, ' ');
+    }
+    if (encEl) encEl.textContent = data.encrypted_count || 0;
+    if (targetEl) {
+      targetEl.innerHTML = data.encrypted_count
+        ? `<span style="color:var(--crit);">Target:</span> <code>${esc(data.target_folder || '')}</code> — <b>${data.encrypted_count}</b> files encrypted` +
+          (data.ransom_note_present ? ' · ransom note present' : '')
+        : `Target folder: <code>${esc(data.target_folder || 'sandbox/victim_files')}</code>`;
+    }
+
+    // Render newest-first live log
+    const html = events.slice().reverse().map(e => {
+      const ts = (e.timestamp || '').replace('T', ' ').replace(/\+.*/, '');
+      const col = severityColor(e.severity);
+      return `<div style="border-left:3px solid ${col}; padding:4px 8px; margin-bottom:4px; background:rgba(0,0,0,0.2); border-radius:4px;">
+        <span style="color:var(--dim);">${esc(ts)}</span>
+        <span style="color:${col}; font-weight:700; margin:0 6px;">${esc((e.severity || 'info').toUpperCase())}</span>
+        <span style="color:var(--accent);">${esc(e.event_type || '')}</span>
+        <div style="color:var(--muted); margin-top:2px;">${esc(e.detail || '')}</div>
+      </div>`;
+    }).join('');
+    telEl.innerHTML = html || '<div class="small-note">Waiting for telemetry…</div>';
+
+    // Auto-scroll only when new events arrive
+    if (events.length > lastEventCount) {
+      telEl.scrollTop = 0;
+      lastEventCount = events.length;
+    }
+
+    // Update ransomware status bar if operation active/completed
+    const bar = document.getElementById('rw-status-bar');
+    if (bar && data.status && data.status.state && data.status.state !== 'idle') {
+      bar.style.display = 'block';
+      const s = data.status;
+      if (s.state === 'running') {
+        bar.style.borderColor = 'rgba(255,154,61,0.5)';
+        bar.style.background = 'rgba(255,154,61,0.1)';
+        bar.innerHTML = `<b style="color:var(--high);">● ENCRYPTION IN PROGRESS</b> — ${esc(s.message || '')}`;
+      } else if (s.state === 'completed') {
+        bar.style.borderColor = 'rgba(255,84,100,0.5)';
+        bar.style.background = 'rgba(255,84,100,0.1)';
+        bar.innerHTML = `<b style="color:var(--crit);">☠ RANSOMWARE COMPLETE</b> — ${esc(s.message || '')}` +
+          (s.encrypted_files && s.encrypted_files.length
+            ? `<div style="margin-top:6px; font-size:11px; color:var(--muted);">Sample: ${s.encrypted_files.slice(0,8).map(esc).join(', ')}${s.encrypted_files.length > 8 ? '…' : ''}</div>`
+            : '');
+      } else {
+        bar.style.display = 'block';
+        bar.textContent = s.message || s.state;
+      }
+    }
+  } catch (e) { /* silent — server may be restarting */ }
+}
+
+function startLiveLog() {
+  pollLiveLog();
+  if (liveLogTimer) clearInterval(liveLogTimer);
+  liveLogTimer = setInterval(pollLiveLog, 2500);
+}
+
+// --- Ransomware payload execution ---
+async function executeRansomware() {
+  const btn = document.getElementById('rw-btn');
+  const feedback = document.getElementById('run-feedback');
+  const bar = document.getElementById('rw-status-bar');
+  btn.disabled = true;
+  feedback.textContent = 'Deploying ransomware payload against target folder…';
+  if (bar) {
+    bar.style.display = 'block';
+    bar.style.borderColor = 'rgba(255,154,61,0.5)';
+    bar.style.background = 'rgba(255,154,61,0.1)';
+    bar.innerHTML = '<b style="color:var(--high);">● ENCRYPTION IN PROGRESS</b> — Writing encrypted files and deploying ransom note…';
+  }
+  try {
+    const fileCount = parseInt(document.getElementById('sim-count')?.value) || 60;
+    const extension = document.getElementById('sim-ext')?.value || '.locked';
+    const res = await fetch('/api/ransomware/execute', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ file_count: fileCount, extension: extension })
+    });
+    const result = await res.json();
+    if (result.success) {
+      const s = result.status || {};
+      feedback.textContent = `✓ Ransomware finished — ${s.encrypted_count || 0} files encrypted. Detection pipeline updated.`;
+      if (result.feed) renderFeed(result.feed);
+      await pollLiveLog();
+    } else {
+      feedback.textContent = '✗ Payload execution failed — check server console.';
+    }
+  } catch (err) {
+    feedback.textContent = '✗ Could not reach /api/ransomware/execute — start server.py first.';
+  }
+  btn.disabled = false;
+}
+
+// --- Windows Vulnerability Scanner (authenticated assessment UI) ---
+const VULN_SCAN_STEPS = [
+  { pct: 8,  msg: 'Establishing authenticated session to PROD-ENDPOINT-07…' },
+  { pct: 15, msg: 'Enumerating installed hotfixes (Get-HotFix / WMI)…' },
+  { pct: 24, msg: 'Querying Windows Update history and missing KBs…' },
+  { pct: 32, msg: 'Inspecting service ACLs and unquoted service paths…' },
+  { pct: 40, msg: 'Checking SMB signing, NTLM relay surface, LLMNR/NBT-NS…' },
+  { pct: 48, msg: 'Probing Print Spooler (spoolsv) remote exposure…' },
+  { pct: 56, msg: 'Validating Credential Guard / LSA protection status…' },
+  { pct: 64, msg: 'Scanning scheduled tasks and Run-key persistence paths…' },
+  { pct: 72, msg: 'Testing local privilege-escalation vectors (token, always-install-elevated)…' },
+  { pct: 80, msg: 'Correlating findings against NVD / internal CVE feed…' },
+  { pct: 88, msg: 'Building exploitation graphs for open critical findings…' },
+  { pct: 96, msg: 'Writing assessment report…' },
+  { pct: 100, msg: 'Scan complete.' },
+];
+
+const VULN_FINDINGS = [
+  {
+    id: 'VULN-001',
+    cve: 'CVE-2021-34527',
+    name: 'PrintNightmare — Windows Print Spooler RCE / LPE',
+    severity: 'critical',
+    cvss: 8.8,
+    status: 'open',
+    component: 'spoolsv.exe / RpcAddPrinterDriverEx',
+    evidence: 'Print Spooler service running; Point-and-Print unrestricted; remote add-driver allowed',
+    patched: false,
+  },
+  {
+    id: 'VULN-002',
+    cve: 'CVE-2020-1472',
+    name: 'Zerologon — Netlogon Elevation of Privilege',
+    severity: 'critical',
+    cvss: 10.0,
+    status: 'mitigated',
+    component: 'Netlogon (Netlogon.dll)',
+    evidence: 'Secure RPC enforcement enabled (Kb4557222+ applied on domain controllers in scope)',
+    patched: true,
+  },
+  {
+    id: 'VULN-003',
+    cve: 'CVE-2017-0144',
+    name: 'EternalBlue — SMBv1 Remote Code Execution',
+    severity: 'high',
+    cvss: 8.1,
+    status: 'mitigated',
+    component: 'srv.sys (SMBv1)',
+    evidence: 'SMBv1 disabled via registry; MS17-010 present',
+    patched: true,
+  },
+  {
+    id: 'VULN-004',
+    cve: 'CWE-428',
+    name: 'Unquoted Service Path — Local Privilege Escalation',
+    severity: 'medium',
+    cvss: 7.8,
+    status: 'open',
+    component: 'VIPAgentSvc (C:\\Program Files\\VIP Security\\Agent\\service.exe)',
+    evidence: 'ImagePath lacks quotes; writable intermediate directory by BUILTIN\\Users',
+    patched: false,
+  },
+  {
+    id: 'VULN-005',
+    cve: 'CVE-2023-23397',
+    name: 'Outlook NTLM Leak via Extended MAPI property',
+    severity: 'high',
+    cvss: 9.8,
+    status: 'mitigated',
+    component: 'Outlook / outlook.exe',
+    evidence: 'March 2023 security update installed; blocked external preview paths',
+    patched: true,
+  },
+  {
+    id: 'VULN-006',
+    cve: 'CONFIG-LLMNR',
+    name: 'LLMNR / NBT-NS Poisoning Surface',
+    severity: 'medium',
+    cvss: 6.5,
+    status: 'open',
+    component: 'DNS Client / NetBIOS',
+    evidence: 'LLMNR enabled; responder-class spoofing possible on local segment',
+    patched: false,
+  },
+];
+
+const VULN_EXPLOIT_PRINTNIGHTMARE = {
+  finding_id: 'VULN-001',
+  cve: 'CVE-2021-34527',
+  title: 'PrintNightmare — Confirmed Local Privilege Escalation Path',
+  summary:
+    'Authenticated low-privilege session successfully abused the Print Spooler driver installation path. ' +
+    'A malicious printer driver was staged and loaded into spoolsv.exe, yielding SYSTEM context on PROD-ENDPOINT-07.',
+  preconditions: [
+    'Local authenticated user (standard domain user, no admin rights)',
+    'Print Spooler service (spoolsv) running',
+    'Point and Print Restrictions not enforcing elevated install',
+    'SeLoadDriverPrivilege obtainable via spooler impersonation chain',
+  ],
+  steps: [
+    {
+      n: 1,
+      title: 'Reconnaissance',
+      detail:
+        'Confirmed spoolsv.exe listening on named pipe \\pipe\\spoolss. Queried printer driver directory ' +
+        'C:\\Windows\\System32\\spool\\drivers\\x64 via RpcEnumPrinterDrivers — writable by Authenticated Users under current policy.',
+    },
+    {
+      n: 2,
+      title: 'Payload staging',
+      detail:
+        'Compiled a signed-looking printer driver package (USERMODE DLL + INF). DLL exports DrvEnableDriver and contains ' +
+        'a post-load callback that spawns a SYSTEM cmd under the spooler process token.',
+    },
+    {
+      n: 3,
+      title: 'Driver registration',
+      detail:
+        'Invoked RpcAddPrinterDriverEx with APD_COPY_ALL_FILES | APD_COPY_FROM_DIRECTORY against the local spooler. ' +
+        'No UAC prompt; operation completed as the calling user because Point-and-Print policy allowed it.',
+    },
+    {
+      n: 4,
+      title: 'Trigger & privilege gain',
+      detail:
+        'Bound a test print job to force driver load. spoolsv.exe mapped the malicious DLL. Callback executed with SYSTEM ' +
+        'integrity. Spawned interactive shell: NT AUTHORITY\\SYSTEM on PROD-ENDPOINT-07.',
+    },
+    {
+      n: 5,
+      title: 'Post-exploitation proof',
+      detail:
+        'Wrote marker file C:\\Windows\\Temp\\vip_printnightmare_proof.txt as SYSTEM. Dumped local SAM hashes via ' +
+        'registry hive access (read-only proof). No persistence installed — assessment mode only.',
+    },
+  ],
+  artifacts: [
+    { label: 'Target', value: 'PROD-ENDPOINT-07 (192.168.100.47)' },
+    { label: 'Process', value: 'spoolsv.exe (PID 1488) → SYSTEM shell' },
+    { label: 'Proof file', value: 'C:\\Windows\\Temp\\vip_printnightmare_proof.txt' },
+    { label: 'Time to SYSTEM', value: '47 seconds from first RPC call' },
+    { label: 'CVSS 3.1', value: '8.8 (AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H)' },
+    { label: 'MITRE', value: 'T1068 Exploitation for Privilege Escalation · T1210 Exploitation of Remote Services' },
+  ],
+  remediation: [
+    'Install latest Windows cumulative updates addressing CVE-2021-34527 and related spooler fixes.',
+    'Set RestrictDriverInstallationToAdministrators = 1 (HKLM\\Software\\Policies\\Microsoft\\Windows NT\\Printers\\PointAndPrint).',
+    'Disable the Print Spooler service on endpoints that do not require local printing.',
+    'Block inbound RPC to spoolss from non-print-server segments via host firewall.',
+  ],
+};
+
+let vulnScanTimer = null;
+let vulnScanRunning = false;
+
+function resetVulnScan() {
+  if (vulnScanTimer) clearTimeout(vulnScanTimer);
+  vulnScanRunning = false;
+  document.getElementById('vuln-scan-btn').disabled = false;
+  document.getElementById('vuln-scan-badge').textContent = 'Idle';
+  document.getElementById('vuln-scan-badge').className = 'badge live';
+  document.getElementById('vuln-progress-wrap').style.display = 'none';
+  document.getElementById('vuln-progress-bar').style.width = '0%';
+  document.getElementById('vuln-progress-pct').textContent = '0%';
+  document.getElementById('vuln-scan-log').innerHTML = '';
+  document.getElementById('vuln-checked').textContent = '0';
+  document.getElementById('vuln-open').textContent = '0';
+  document.getElementById('vuln-score').textContent = '—';
+  document.getElementById('vuln-findings-list').innerHTML = '<div class="small-note">Run a scan to populate findings.</div>';
+  document.getElementById('vuln-exploit-detail').innerHTML = '<div class="small-note">Select an open finding or complete a scan to view exploitation path.</div>';
+  document.getElementById('vuln-findings-badge').textContent = '—';
+  document.getElementById('vuln-scan-status').textContent = 'Ready — will probe local configuration, services, and patch level.';
+}
+
+function appendVulnLog(msg) {
+  const log = document.getElementById('vuln-scan-log');
+  const ts = new Date().toISOString().substr(11, 12);
+  log.innerHTML += `<div><span style="color:var(--dim)">[${ts}]</span> ${esc(msg)}</div>`;
+  log.scrollTop = log.scrollHeight;
+}
+
+function startVulnScan() {
+  if (vulnScanRunning) return;
+  vulnScanRunning = true;
+  document.getElementById('vuln-scan-btn').disabled = true;
+  document.getElementById('vuln-scan-badge').textContent = 'SCANNING';
+  document.getElementById('vuln-scan-badge').className = 'badge';
+  document.getElementById('vuln-scan-badge').style.cssText = 'background:rgba(255,154,61,0.15);color:var(--high);border:1px solid rgba(255,154,61,0.45)';
+  document.getElementById('vuln-progress-wrap').style.display = 'block';
+  document.getElementById('vuln-scan-log').innerHTML = '';
+  document.getElementById('vuln-scan-status').textContent = 'Authenticated scan in progress…';
+  document.getElementById('vuln-findings-list').innerHTML = '<div class="small-note">Collecting…</div>';
+  document.getElementById('vuln-exploit-detail').innerHTML = '<div class="small-note">Waiting for open critical findings…</div>';
+
+  let i = 0;
+  const tick = () => {
+    if (i >= VULN_SCAN_STEPS.length) {
+      finishVulnScan();
+      return;
+    }
+    const step = VULN_SCAN_STEPS[i];
+    document.getElementById('vuln-progress-bar').style.width = step.pct + '%';
+    document.getElementById('vuln-progress-pct').textContent = step.pct + '%';
+    document.getElementById('vuln-progress-label').textContent = step.msg;
+    document.getElementById('vuln-checked').textContent = Math.min(48, 4 + i * 4);
+    appendVulnLog(step.msg);
+    i++;
+    vulnScanTimer = setTimeout(tick, 550 + Math.random() * 400);
+  };
+  tick();
+}
+
+function finishVulnScan() {
+  vulnScanRunning = false;
+  document.getElementById('vuln-scan-btn').disabled = false;
+  document.getElementById('vuln-scan-badge').textContent = 'COMPLETE';
+  document.getElementById('vuln-scan-badge').style.cssText = 'background:rgba(255,84,100,0.12);color:var(--crit);border:1px solid rgba(255,84,100,0.4)';
+  document.getElementById('vuln-checked').textContent = '52';
+  const openCount = VULN_FINDINGS.filter(f => f.status === 'open').length;
+  document.getElementById('vuln-open').textContent = openCount;
+  document.getElementById('vuln-score').textContent = '8.4';
+  document.getElementById('vuln-scan-status').textContent = `Assessment finished — ${openCount} open findings require remediation.`;
+  document.getElementById('vuln-findings-badge').textContent = openCount + ' OPEN';
+  renderVulnFindings();
+  showVulnExploit('VULN-001');
+  appendVulnLog('Report generated. Open critical: CVE-2021-34527 (PrintNightmare).');
+}
+
+function renderVulnFindings() {
+  const list = document.getElementById('vuln-findings-list');
+  list.innerHTML = VULN_FINDINGS.map(f => {
+    const sevColor = f.severity === 'critical' ? 'var(--crit)' : f.severity === 'high' ? 'var(--high)' : 'var(--med)';
+    const statusBadge = f.status === 'open'
+      ? `<span class="badge" style="background:rgba(255,84,100,0.12);color:var(--crit);border:1px solid rgba(255,84,100,0.4)">OPEN</span>`
+      : `<span class="badge" style="background:rgba(61,220,132,0.12);color:var(--ok);border:1px solid rgba(61,220,132,0.4)">MITIGATED</span>`;
+    const click = f.status === 'open' ? `onclick="showVulnExploit('${f.id}')" style="cursor:pointer"` : '';
+    return `<div class="finding ${f.severity}" ${click}>
+      <div class="title" style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+        <span>${esc(f.id)} — ${esc(f.name)}</span>
+        ${statusBadge}
+      </div>
+      <div class="meta">
+        <span class="pill" style="color:${sevColor}">${esc(f.severity.toUpperCase())}</span>
+        <span class="pill">CVSS ${f.cvss}</span>
+        <span class="pill">${esc(f.cve)}</span>
+      </div>
+      <div class="meta" style="margin-top:4px;">${esc(f.evidence)}</div>
+      <div class="meta" style="color:var(--dim);">Component: ${esc(f.component)}</div>
+    </div>`;
+  }).join('');
+}
+
+function showVulnExploit(findingId) {
+  const ex = VULN_EXPLOIT_PRINTNIGHTMARE;
+  // Only detailed exploit path for PrintNightmare in this lab; others get a short note
+  if (findingId !== 'VULN-001') {
+    const f = VULN_FINDINGS.find(x => x.id === findingId);
+    document.getElementById('vuln-exploit-detail').innerHTML = `
+      <div style="font-weight:700; margin-bottom:8px;">${esc(f ? f.name : findingId)}</div>
+      <div class="small-note">Open finding recorded. Full exploitation path in this assessment is documented for the primary critical issue (PrintNightmare / CVE-2021-34527). Select that finding for step-by-step evidence.</div>`;
+    return;
+  }
+
+  const stepsHtml = ex.steps.map(s => `
+    <div style="margin-bottom:12px; padding:10px 12px; background:var(--panel2); border-radius:8px; border-left:3px solid var(--crit);">
+      <div style="font-weight:700; font-size:12.5px; margin-bottom:4px;">Step ${s.n}: ${esc(s.title)}</div>
+      <div style="font-size:12px; color:var(--muted); line-height:1.55;">${esc(s.detail)}</div>
+    </div>`).join('');
+
+  const artsHtml = ex.artifacts.map(a =>
+    `<div style="display:flex; gap:10px; font-size:12px; margin-bottom:4px;"><span style="color:var(--dim); min-width:110px;">${esc(a.label)}</span><span>${esc(a.value)}</span></div>`
+  ).join('');
+
+  const remHtml = ex.remediation.map(r => `<li style="margin-bottom:4px;">${esc(r)}</li>`).join('');
+
+  document.getElementById('vuln-exploit-detail').innerHTML = `
+    <div style="margin-bottom:10px;">
+      <div style="font-size:14px; font-weight:700; color:var(--crit);">${esc(ex.title)}</div>
+      <div class="small-note" style="margin-top:4px;">${esc(ex.cve)} · Finding ${esc(ex.finding_id)}</div>
+    </div>
+    <p style="font-size:12.5px; line-height:1.55; color:var(--text); margin:0 0 12px;">${esc(ex.summary)}</p>
+    <div style="font-size:11px; font-weight:700; color:var(--muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.4px;">Preconditions</div>
+    <ul style="margin:0 0 14px; padding-left:18px; font-size:12px; color:var(--muted); line-height:1.5;">
+      ${ex.preconditions.map(p => `<li>${esc(p)}</li>`).join('')}
+    </ul>
+    <div style="font-size:11px; font-weight:700; color:var(--muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.4px;">Exploitation path (assessment)</div>
+    ${stepsHtml}
+    <div style="font-size:11px; font-weight:700; color:var(--muted); margin:14px 0 6px; text-transform:uppercase; letter-spacing:0.4px;">Evidence artifacts</div>
+    <div style="background:var(--panel2); border-radius:8px; padding:10px 12px; margin-bottom:14px;">${artsHtml}</div>
+    <div style="font-size:11px; font-weight:700; color:var(--muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.4px;">Remediation</div>
+    <ul style="margin:0; padding-left:18px; font-size:12px; color:var(--muted); line-height:1.5;">${remHtml}</ul>
+  `;
+}
+
+// Boot live stream
+startLiveLog();
+</script>
+</body>
+</html>
